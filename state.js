@@ -2,6 +2,9 @@ var mapStores = new WeakMap();
 var acceptStates = new WeakSet();
 
 function State(accepts) {
+  if(!(this instanceof State)) {
+    throw new Error('Constructor State requires \'new\'');
+  }
   if(accepts === true) {
     acceptStates.add(this);
   }

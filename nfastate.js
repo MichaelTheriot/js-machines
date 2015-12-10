@@ -20,9 +20,9 @@ function NFAState(accepts) {
 NFAState.prototype = Object.create(State.prototype);
 
 NFAState.prototype.map = function (input, state) {
-  var states = [];
+  var set = new Set();
   if(State.prototype.hasTransition.call(this, input)) {
-    states.push(State.prototype.transition.call(this, input));
+    set.add(State.prototype.transition.call(this, input));
   }
   for(var i = 1; i < arguments.length || i === 1; state = arguments[++i]) {
     if(input === empty && state === this) {
@@ -31,9 +31,9 @@ NFAState.prototype.map = function (input, state) {
     if(!(state instanceof State)) {
       throw new TypeError('Transition destination is not a state');
     }
-    states.push(state);
+    set.add(state);
   }
-  State.prototype.map.call(this, input, new StateSet(states));
+  State.prototype.map.call(this, input, new StateSet(set));
   return this;
 };
 
