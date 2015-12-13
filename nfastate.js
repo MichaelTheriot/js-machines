@@ -5,11 +5,11 @@ var getFailState = function () {
   return require('./failstate');
 };
 
-var flatAdd = require('./lib/flatadd');
+var flatApply = require('./lib/flatapply');
 
 function addEmptyStates(state) {
   if(State.prototype.hasTransition.call(state, empty)) {
-    flatAdd.call(this, State.prototype.transition.call(state, empty));
+    flatApply.call(this, Set.prototype.add, State.prototype.transition.call(state, empty), State);
   }
 }
 
@@ -40,7 +40,7 @@ NFAState.prototype.map = function (input, state) {
 NFAState.prototype.transition = function (input) {
   var state = this;
   for(var i = 0; (i < arguments.length || i === 0) && state !== getFailState(); input = arguments[++i]) {
-    var emptyStates = flatAdd.call(new Set(), state), iter = emptyStates.keys(), result;
+    var emptyStates = flatApply.call(new Set(), Set.prototype.add, state, State), iter = emptyStates.keys(), result;
     while(!(result = iter.next()).done) {
       addEmptyStates.call(emptyStates, result.value);
     }

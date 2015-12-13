@@ -3,7 +3,7 @@ var acceptStates = new WeakSet();
 
 function State(accepts) {
   if(!(this instanceof State)) {
-    throw new Error('Constructor State requires \'new\'');
+    throw new TypeError('Constructor State requires \'new\'');
   }
   if(accepts === true) {
     acceptStates.add(this);
@@ -12,7 +12,7 @@ function State(accepts) {
 }
 
 State.prototype.map = function (input, state) {
-  for(var i = 1; i < arguments.length || i === 1; state = arguments[i++]) {
+  for(var i = 1; i < arguments.length || i === 1; state = arguments[++i]) {
     if(!(state instanceof State)) {
       throw new TypeError('Transition destination is not a state');
     }
