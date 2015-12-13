@@ -25,6 +25,10 @@ describe('flatApply', function () {
       arr = [];
       flatApply.call(arr, arr.push, [new Set([0, 1]), [new Set([2, 3])], [[[new Set([4])]]]], Set);
       assert.strictEqual(3, arr.length);
+      assert.throws(function () {
+        var set = new Set();
+        flatApply.call(set, set.add, [new Array(), new Object(), new Map()], Map);
+      }, TypeError);
     });
   });
 });
