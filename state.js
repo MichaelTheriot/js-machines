@@ -30,9 +30,11 @@ State.prototype.hasTransition = function (input) {
 };
 
 State.prototype.transition = function (input) {
-  for(var state = this, i = 0; (i < arguments.length || i === 0) && state; state = mapStores.get(state).get(arguments[i++]));
-  if(!state) {
-    throw new Error('Unmapped transition');
+  var state, store, i;
+  for(state = this, i = 0; i < arguments.length || i === 0; state = store.get(input)) {
+    if(!(store = mapStores.get(state)).has(input = arguments[i++])) {
+      throw new Error('Unmapped transition');
+    }
   }
   return state;
 };
