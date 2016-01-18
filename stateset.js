@@ -8,7 +8,11 @@ function StateSet(state1, state2) {
   if(!(this instanceof StateSet)) {
     throw new TypeError('Constructor StateSet requires \'new\'');
   }
-  var set = flatApply.call(new Set(), Set.prototype.add, arguments, State);
+  var set = new Set();
+  flatApply.call(set, set.add, arguments);
+  if(![...set].every(s => s instanceof State)) {
+    throw new TypeError('Invalid input');
+  }
   if(set.size === 1) {
     return set.entries().next().value[0];
   }

@@ -8,7 +8,7 @@ function State(accepts) {
   if(accepts === true) {
     acceptStates.add(this);
   }
-  mapStores.set(this, new Map())
+  mapStores.set(this, new Map());
 }
 
 State.prototype.map = function (input, state) {

@@ -170,6 +170,11 @@ describe('NFAState', function () {
       assert.strictEqual(true, state1.transition(0) instanceof StateSet);
     });
 
+    it('should transition to itself on empty', function () {
+      var state = new NFAState();
+      assert.strictEqual(state, state.transition(empty));
+    });
+
     it('should transition through empty transitions automatically', function () {
       var state1 = new NFAState(), state2 = new NFAState(), state3 = new NFAState();
       state1.map(empty, state2);
@@ -180,6 +185,34 @@ describe('NFAState', function () {
       state1.map(0, state2).map(1, state3);
       state2.map(empty, state1);
       assert.strictEqual(state3, state1.transition(0, 1));
+
+      // multiple empty transitions, including one to itself
+      var a = new NFAState();
+      var b = new NFAState();
+      a.map(empty, a);
+      a.map(empty, b);
+      assert.strictEqual(getFailState(), a.transition(42));
+
+      // multiple empty transitions
+      var start = new NFAState();
+      var pathA1 = new NFAState();
+      var pathA2 = new NFAState(true);
+      pathA1.map(42, pathA2);
+      start.map(empty, pathA1, pathA2);
+      assert.strictEqual(true, start.transition(42).accepts());
+
+      // empty transition after non-empty transition
+      var first = new NFAState();
+      first.flag = 0;
+      var second = new NFAState();
+      second.flag = 1;
+      var third = new NFAState(true);
+      third.flag = 2;
+
+      first.map(35, second);
+      second.map(empty, third);
+
+      assert.strictEqual(true, first.transition(35).accepts());
     });
   });
 });
