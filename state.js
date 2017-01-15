@@ -1,51 +1,41 @@
-var mapStores = new WeakMap();
-var acceptStates = new WeakSet();
+const
+  transitionMaps = new WeakMap(),
+  acceptStates = new WeakSet();
 
-function State(accepts) {
-  if(!(this instanceof State)) {
-    throw new TypeError('Constructor State requires \'new\'');
+class State {
+  constructor(accepts = false) {
+    transitionMaps.set(this, new Map());
+    if(accepts) {
+      acceptStates.add(this);
+    }
   }
-  if(accepts === true) {
-    acceptStates.add(this);
-  }
-  mapStores.set(this, new Map());
-}
 
-State.prototype.map = function (input, state) {
-  for(var i = 1; i < arguments.length || i === 1; state = arguments[++i]) {
+  map(input, ...states) {
+    const state = states[states.length - 1];
     if(!(state instanceof State)) {
-      throw new TypeError('Transition destination is not a state');
+      throw new TypeError('Destination is not a state');
     }
-    mapStores.get(this).set(input, state);
+    transitionMaps.get(this).set(input, state);
+    return this;
   }
-  return this;
-};
 
-State.prototype.unmap = function (input) {
-  return mapStores.get(this).delete(input);
-};
+  has(...inputs) {
+    let state = this;
+    return inputs.every(input => state = transitionMaps.get(state).get(input));
+  }
 
-State.prototype.hasTransition = function (input) {
-  return mapStores.get(this).has(input);
-};
-
-State.prototype.transition = function (input) {
-  var state, store, i;
-  for(state = this, i = 0; i < arguments.length || i === 0; state = store.get(input)) {
-    if(!(store = mapStores.get(state)).has(input = arguments[i++])) {
-      throw new Error('Unmapped transition');
+  transition(...inputs) {
+    let state = this;
+    inputs.every(input => state && (state = transitionMaps.get(state).get(input)));
+    if(!(state instanceof State)) {
+      throw new TypeError('Input is not mapped');
     }
+    return state;
   }
-  return state;
-};
 
-State.prototype.accepts = function (override) {
-  if(override === true) {
-    acceptStates.add(this);
-  } else if(override === false) {
-    acceptStates.delete(this);
+  accepts() {
+    return acceptStates.has(this);
   }
-  return acceptStates.has(this);
-};
+}
 
 module.exports = State;

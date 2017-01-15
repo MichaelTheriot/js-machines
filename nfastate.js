@@ -1,73 +1,51 @@
-'use strict';
+const
+  State = require('./state'),
+  StateSet = require('./stateset'),
+  emptyInput = Symbol();
 
-var State = require('./state');
-var StateSet = require('./stateset');
-var empty = require('./empty');
-var getFailState = function () {
-  return require('./failstate');
-};
+class NFAState extends State {
+  static get empty() {
+    return emptyInput;
+  }
 
-var flatApply = require('./lib/flatapply');
+  map(input, ...states) {
+    super.map(input, this.has(input) ? new StateSet(super.transition(input), ...states) : new StateSet(...states));
+    return this;
+  }
 
-function addEmptyTransitions(set) {
-  var itr = set.keys();
-  var result;
-  while(!(result = itr.next()).done) {
-    if(State.prototype.hasTransition.call(result.value, empty)) {
-      flatApply.call(set, set.add, State.prototype.transition.call(result.value, empty));
+  transition(...inputs) {
+    let state = this;
+    for(let i = 0; i < inputs.length; i++) {
+      if(state.has(NFAState.empty)) {
+        let set = state instanceof StateSet ? new Set([...state]) : new Set([state]);
+        for(let sstate of set) {
+          if(sstate instanceof StateSet) {
+            for(let ssstate of sstate) {
+              set.add(ssstate);
+            }
+          } else if(sstate.has(NFAState.empty)) {
+            set.add(super.transition.call(sstate, NFAState.empty));
+          }
+        }
+        state = new StateSet(...set);
+      }
+      if(inputs[i] === NFAState.empty) {
+        continue;
+      }
+      if(state instanceof StateSet) {
+        let set = new Set();
+        for(let sstate of state) {
+          if(sstate.has(inputs[i])) {
+            set.add(super.transition.call(sstate, inputs[i]));
+          }
+        }
+        state = set.size ? new StateSet(...set) : new NFAState(false);
+      } else {
+        state = state.has(inputs[i]) ? super.transition.call(state, inputs[i]) : new NFAState(false);
+      }
     }
+    return state;
   }
 }
-
-function transitionSet(set, input) {
-  var nextSet = new Set();
-  for(var state of set) {
-    if(State.prototype.hasTransition.call(state, input)) {
-      flatApply.call(nextSet, nextSet.add, State.prototype.transition.call(state, input));
-    }
-  }
-  return nextSet;
-}
-
-function NFAState(accepts) {
-  State.apply(this, arguments);
-}
-
-NFAState.prototype = Object.create(State.prototype);
-
-NFAState.prototype.map = function (input, state) {
-  var set = new Set();
-  if(State.prototype.hasTransition.call(this, input)) {
-    flatApply.call(set, set.add, State.prototype.transition.call(this, input));
-  }
-  for(var i = 1; i < arguments.length || i === 1; state = arguments[++i]) {
-    if(input === empty && state === this) {
-      continue;
-    }
-    if(!(state instanceof State)) {
-      throw new TypeError('Transition destination is not a state');
-    }
-    set.add(state);
-  }
-  if(set.size > 0) {
-    State.prototype.map.call(this, input, new StateSet(set));
-  }
-  return this;
-};
-
-NFAState.prototype.transition = function (input) {
-  var state = this;
-  for(var i = 0; (i < arguments.length || i === 0) && state !== getFailState(); input = arguments[++i]) {
-    var set = new Set();
-    flatApply.call(set, set.add, state);
-    addEmptyTransitions(set);
-    if(empty !== input) {
-      set = transitionSet(set, input);
-      addEmptyTransitions(set);
-    }
-    state = set.size > 0 ? new StateSet(set) : getFailState();
-  }
-  return state;
-};
 
 module.exports = NFAState;

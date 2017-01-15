@@ -1,78 +1,64 @@
-var State = require('./state');
+const NFAState = require('./nfastate');
 
-var flatApply = require('./lib/flatapply');
+const sets = new WeakMap();
 
-var setStores = new WeakMap();
+class StateSet extends State {
+  constructor(...states) {
+    super();
+    const set = states.reduce((set, item) => {
+      if(!(item instanceof State)) {
+        throw new TypeError('Input is not a state');
+      }
+      if(item instanceof StateSet) {
+        sets.get(item).forEach(state => set.add(state));
+      } else {
+        set.add(item);
+      }
+      return set;
+    }, new Set());
+    switch(set.size) {
+      case 0:
+        throw new TypeError('No states in input');
+      case 1:
+        return set.values().next().value;
+    }
+    sets.set(this, set);
+  }
 
-function StateSet(state1, state2) {
-  if(!(this instanceof StateSet)) {
-    throw new TypeError('Constructor StateSet requires \'new\'');
+  map(input, ...states) {
+    for(let state of sets.get(this)) {
+      state.map.apply(state, arguments);
+    }
+    return this;
   }
-  var set = new Set();
-  flatApply.call(set, set.add, arguments);
-  if(![...set].every(s => s instanceof State)) {
-    throw new TypeError('Invalid input');
+
+  has(...inputs) {
+    for(let state of sets.get(this)) {
+      if(state.has.apply(state, arguments)) {
+        return true;
+      }
+    }
+    return false;
   }
-  if(set.size === 1) {
-    return set.entries().next().value[0];
+
+  transition(...inputs) {
+    return new StateSet(...[...this].map(state => state.transition.apply(state, arguments)));
   }
-  if(set.size === 0) {
-    throw new TypeError('StateSet constructor requires a State');
+
+  accepts() {
+    for(let state of sets.get(this)) {
+      if(state.accepts()) {
+        return true;
+      }
+    }
+    return false;
   }
-  setStores.set(this, set);
+
+  *[Symbol.iterator] () {
+    for(let state of sets.get(this)) {
+      yield state;
+    }
+  }
 }
-
-StateSet.prototype = Object.create(State.prototype);
-
-StateSet.prototype.map = function (input, state) {
-  for(var s of setStores.get(this)) {
-    s.map.apply(s, arguments);
-  }
-  return this;
-};
-
-StateSet.prototype.unmap = function (input, state) {
-  var unmapped = false;
-  for(var s of setStores.get(this)) {
-    unmapped = s.unmap.apply(s, arguments) || unmapped;
-  }
-  return unmapped;
-};
-
-StateSet.prototype.hasTransition = function (input) {
-  var hasTransition = false;
-  for(var s of setStores.get(this)) {
-    if(hasTransition = s.hasTransition(input)) {
-      break;
-    }
-  }
-  return hasTransition;
-};
-
-StateSet.prototype.transition = function (input) {
-  var nextSet = new Set();
-  for(var s of setStores.get(this)) {
-    nextSet.add(s.transition.apply(s, arguments));
-  }
-  if(nextSet.size === 1) {
-    return nextSet.entries().next().value[0];
-  }
-  return new StateSet(nextSet);
-};
-
-StateSet.prototype.accepts = function (override) {
-  var accepts = false;
-  for(var s of setStores.get(this)) {
-    accepts = s.accepts.apply(s, arguments) || accepts;
-    if(accepts && arguments.length === 0) {
-      break;
-    }
-  }
-  return accepts;
-};
-
-StateSet.prototype[Symbol.iterator] = function () {
-  return setStores.get(this)[Symbol.iterator]();
-};
 
 module.exports = StateSet;
