@@ -1,6 +1,6 @@
-const NFAState = require('./nfastate');
-
-const sets = new WeakMap();
+const
+  State = require('./state'),
+  sets = new WeakMap();
 
 class StateSet extends State {
   constructor(...states) {
@@ -27,9 +27,17 @@ class StateSet extends State {
 
   map(input, ...states) {
     for(let state of sets.get(this)) {
-      state.map.apply(state, arguments);
+      super.map.apply(state, arguments);
     }
     return this;
+  }
+
+  unmap(input) {
+    let res = false;
+    for(let state of sets.get(this)) {
+      res = super.unmap.apply(state, arguments) || res;
+    }
+    return res;
   }
 
   has(...inputs) {
@@ -45,7 +53,14 @@ class StateSet extends State {
     return new StateSet(...[...this].map(state => state.transition.apply(state, arguments)));
   }
 
-  accepts() {
+  accepts(override) {
+    if(override || override !== undefined) {
+      let res = false;
+      for(let state of sets.get(this)) {
+        res = state.accepts(override) || res;
+      }
+      return res;
+    }
     for(let state of sets.get(this)) {
       if(state.accepts()) {
         return true;
