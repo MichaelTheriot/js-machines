@@ -36,7 +36,7 @@ class State {
   }
 
   unmap(input) {
-    if(this.isFrozen) {
+    if(State.isFrozen(this)) {
       throw new TypeError('State is frozen and can no longer unmap inputs');
     }
     return transitionMaps.get(this).delete(input);
@@ -57,13 +57,14 @@ class State {
   }
 
   accepts(override) {
-    if(arguments.length > 0 && this.isFrozen) {
-      throw new TypeError('State is frozen and can no longer modify acceptability');
-    }
-    if(override) {
-      acceptStates.add(this);
-    } else if(override !== undefined) {
-      acceptStates.delete(this);
+    if(override || override !== undefined) {
+      if(State.isFrozen(this)) {
+        throw new TypeError('State is frozen and can no longer modify acceptability');
+      } else if(override) {
+        acceptStates.add(this);
+      } else if(override !== undefined) {
+        acceptStates.delete(this);        
+      }
     }
     return acceptStates.has(this);
   }
