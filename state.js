@@ -57,14 +57,13 @@ class State {
   }
 
   accepts(override) {
-    if(override || override !== undefined) {
-      if(State.isFrozen(this)) {
-        throw new TypeError('State is frozen and can no longer modify acceptability');
-      } else if(override) {
-        acceptStates.add(this);
-      } else if(override !== undefined) {
-        acceptStates.delete(this);        
-      }
+    const m = override ? 1 : override !== undefined ? 2 : 0;
+    if(m !== 0 && State.isFrozen(this)) {
+      throw new TypeError('State is frozen and can no longer modify acceptability');
+    } else if(m === 1) {
+      acceptStates.add(this);
+    } else if(m === 2) {
+      acceptStates.delete(this);
     }
     return acceptStates.has(this);
   }
