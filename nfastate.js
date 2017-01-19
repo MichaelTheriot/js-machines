@@ -35,10 +35,13 @@ class NFAState extends State {
 
   transition(...inputs) {
     let state = this;
+    if(!inputs.length || inputs[inputs.length - 1] !== emptyInput) {
+      inputs.push(emptyInput);
+    }
     for(let input of inputs) {
       const
         start = new Set(state instanceof StateSet ? state : [state]),
-        end = new Set();
+        end = new Set(input === emptyInput ? start : undefined);
       for(let state of start) {
         if(super.has.call(state, emptyInput)) {
           flatEach(super.transition.call(state, emptyInput), s => start.add(s));
