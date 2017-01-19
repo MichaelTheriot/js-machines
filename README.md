@@ -2,7 +2,7 @@
 
 * Reducing NFA to DFA
 * Convert RegExp to NFA
-* Convert to symbol object lookups
+* Convert to symbol property lookups
 
 ## General usage
 
@@ -33,6 +33,6 @@ console.log(nfa.start.has('e','c','h','o'));            // true
 console.log(nfa.start.has('e','c','h','o','o'));        // false
 console.log(nfa.start.has(...'golf'));                  // true
 console.log(nfa.start.has(...'ggolf'));                 // false
-console.log(nfa.start.transition(...'golf').accepts())  // true
-console.log(nfa.start.transition(...'gol').accepts())   // false
+console.log(nfa.start.transition(...'golf').accepts()); // true
+console.log(nfa.start.transition(...'gol').accepts());  // false
 ```

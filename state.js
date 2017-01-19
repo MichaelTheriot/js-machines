@@ -17,7 +17,7 @@ class State {
 
   static freeze(state) {
     if(!(state instanceof State)) {
-      throw new TypeError('Input is not as state');
+      throw new TypeError('Input is not a state');
     }
     frozenStates.add(state);
     return state;
