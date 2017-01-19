@@ -3,6 +3,16 @@ const
   StateSet = require('./stateset'),
   emptyInput = Symbol();
 
+const flatEach = (obj, cb) => {
+  if(Symbol.iterator in obj) {
+    for(let o of obj) {
+      cb(o);
+    }
+  } else {
+    cb(obj);
+  }
+};
+
 let failState = null;
 
 class NFAState extends State {
@@ -15,7 +25,7 @@ class NFAState extends State {
   }
 
   map(input, ...states) {
-    super.map(input, this.has(input) ? new StateSet(super.transition(input), ...states) : new StateSet(...states));
+    super.map(input, super.has.call(this, input) ? new StateSet(super.transition(input), ...states) : new StateSet(...states));
     return this;
   }
 
@@ -26,47 +36,21 @@ class NFAState extends State {
   transition(...inputs) {
     let state = this;
     for(let input of inputs) {
-      // if there are empty transitions, collect the states first
-      if(super.has.call(state, emptyInput)) {
-        // create set of traversed states
-        let set = state instanceof StateSet ? new Set([...state]) : new Set([state]);
-        for(let sstate of set) {
-          // if state is a StateSet, add all internal states to the set
-          // otherwise, check if an empty transition exists and add the linked state to set
-          if(sstate instanceof StateSet) {
-            for(let ssstate of sstate) {
-              set.add(ssstate);
-            }
-          } else if(super.has.call(sstate, emptyInput)) {
-            set.add(super.transition.call(sstate, emptyInput));
-          }
+      const
+        start = new Set(state instanceof StateSet ? state : [state]),
+        end = new Set();
+      for(let state of start) {
+        if(super.has.call(state, emptyInput)) {
+          flatEach(super.transition.call(state, emptyInput), s => start.add(s));
         }
-        // flatten everything into a new StateSet
-        state = new StateSet(...set);
+        if(super.has.call(state, input)) {
+          flatEach(super.transition.call(state, input), s => end.add(s));
+        }
       }
-      // if the input is empty, ignore as the states are already collected
-      if(input === emptyInput) {
-        continue;
-      }
-      // if state is a StateSet, check if any internal states has the transition
-      // otherwise, check if the state has the transition
-      // return an unmapped fail state if either checks fail
-      if(state instanceof StateSet) {
-        let set = new Set();
-        for(let sstate of state) {
-          if(super.has.call(sstate, input)) {
-            set.add(super.transition.call(sstate, input));
-          }
-        }
-        if(!set.size) {
-          return NFAState.fail;
-        }
-        state = new StateSet(...set);
-      } else if(!super.has.call(state, input)) {
+      if(!end.size) {
         return NFAState.fail;
-      } else {
-        state = super.transition.call(state, input);
       }
+      state = new StateSet(...end);
     }
     return state;
   }

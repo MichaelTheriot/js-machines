@@ -38,7 +38,7 @@ const concat = (a, b) => {
   return {start, end};
 };
 
-const kStart = (a) => {
+const kStar = (a) => {
   const
     start = new NFAState(),
     end = new NFAState(true);
